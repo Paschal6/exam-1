@@ -334,6 +334,11 @@ function buildReview() {
 // ===============================
 function finishExam() {
 
+    // Stop the timer and clear saved time
+    if (typeof stopTimer === "function") {
+        stopTimer();
+    }
+
     const score = calculateScore();
     const percentage = Math.round((score / totalQuestions) * 100);
 
@@ -348,11 +353,94 @@ function finishExam() {
     };
 
     StorageAPI.save("mathResult", result);
+
+    // Clear saved exam and timer
     StorageAPI.remove("mathCBT");
+    localStorage.removeItem("mathTime");
 
     window.location.href = "result.html";
 }
 
+// ===============================
+// Tab Switch Detection
+// ===============================
+
+// ===============================
+// Disable Developer Shortcuts
+// ===============================
+document.addEventListener("keydown", function (e) {
+
+    // F12
+    if (e.key === "F12") {
+        e.preventDefault();
+        return;
+    }
+
+    // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+    if (
+        e.ctrlKey &&
+        e.shiftKey &&
+        ["I", "J", "C"].includes(e.key.toUpperCase())
+    ) {
+        e.preventDefault();
+        return;
+    }
+
+    // Ctrl+U (View Source)
+    if (e.ctrlKey && e.key.toUpperCase() === "U") {
+        e.preventDefault();
+        return;
+    }
+
+    // Ctrl+S (Save Page)
+    if (e.ctrlKey && e.key.toUpperCase() === "S") {
+        e.preventDefault();
+        return;
+    }
+
+    // Ctrl+P (Print)
+    if (e.ctrlKey && e.key.toUpperCase() === "P") {
+        e.preventDefault();
+        return;
+    }
+
+});
+
+let tabSwitchCount =
+    Number(localStorage.getItem("tabSwitchCount")) || 0;
+
+const MAX_TAB_SWITCHES = 3;
+
+document.addEventListener("visibilitychange", () => {
+
+    if (document.hidden) {
+
+        tabSwitchCount++;
+
+        localStorage.setItem(
+            "tabSwitchCount",
+            tabSwitchCount
+        );
+
+        alert(
+            `Warning!\n\nYou have switched tabs ${tabSwitchCount}/${MAX_TAB_SWITCHES} times.`
+        );
+
+        if (tabSwitchCount >= MAX_TAB_SWITCHES) {
+
+            alert("Examination terminated.");
+
+            finishExam();
+        }
+    }
+});
+
+// ===============================
+// Disable Right Click
+// ===============================
+document.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+});
 // ===============================
 // Submit Modal
 // ===============================
@@ -365,3 +453,7 @@ confirmSubmit.onclick = finishExam;
 // ===============================
 loadStudent();
 loadQuestions();
+
+if (typeof startTimer === "function") {
+    startTimer(finishExam);
+}
